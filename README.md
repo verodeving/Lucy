@@ -1,3 +1,3 @@
 # Project Lucy
 
-C++23 general-purpose library
+C++23 general-purpose framework
