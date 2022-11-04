@@ -1,3 +1,3 @@
-cd build/mac
+cd build/macos
 ./vsc.sh
 cd ../..
