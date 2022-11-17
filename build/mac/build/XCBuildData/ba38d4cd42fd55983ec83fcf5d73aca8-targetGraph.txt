@@ -1,7 +1,0 @@
-Target dependency graph (3 targets)
-ZERO_CHECK in Lucy, no dependencies
-Lucy in Lucy, depends on:
-ZERO_CHECK in Lucy (explicit)
-ALL_BUILD in Lucy, depends on:
-ZERO_CHECK in Lucy (explicit)
-Lucy in Lucy (explicit)
