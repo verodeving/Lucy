@@ -13,14 +13,15 @@ MTL::CommandQueue* __command_queue_;
 
 MTL::ComputeCommandEncoder* __compute_command_encoder_;
 
+MTL::Size __all_threads_;
+    
+[[nodiscard]] inline consteval MTL::Size __threads_()
+{
+    return {16ul, 16ul, 1ul};
+}
+
 class [[nodiscard]] __View_ : public MTK::ViewDelegate
 {
-    MTL::Size __all_threads_;
-    
-    static consteval MTL::Size __threads_()
-    {
-        return {16ul, 16ul, 1ul};
-    }
 public:
     inline __View_(){}
 
@@ -50,6 +51,7 @@ public:
                                         __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
                                         __compute_command_encoder_->setTexture(__texture_, 0ul);
                                         __compute_command_encoder_->dispatchThreads(__all_threads_, __threads_());
+                                        
                                         __compute_command_encoder_->endEncoding();
                                         __command_buffer_->commit();
                                     }
@@ -62,23 +64,19 @@ public:
 
     inline void drawInMTKView(MTK::View* __view_) override
     {
+        const MTL::Drawable* __drawable_ = __view_->currentDrawable();
+        const MTL::Texture* __texture_ = __drawable_->texture();
         MTL::CommandBuffer* __command_buffer_ = __command_queue_->commandBuffer();
-        if(__command_buffer_)
+        __command_buffer_->presentDrawable(__drawable_);
+        __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
+        if(__drawable_ and __texture_ and __command_buffer_ and __compute_command_encoder_)
         {
-            const MTL::Drawable* __drawable_ = __view_->currentDrawable();
-            if(__drawable_)
-            {
-                __command_buffer_->presentDrawable(__drawable_);
-                __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
-                if(__compute_command_encoder_)
-                {
-                    __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
-                    __compute_command_encoder_->setTexture(__drawable_->texture(), 0ul);
-                    __compute_command_encoder_->dispatchThreadgroups(__all_threads_, __threads_());
-                    __compute_command_encoder_->endEncoding();
-                    __command_buffer_->commit();
-                }  
-            }
+            __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
+            __compute_command_encoder_->setTexture(__texture_, 0ul);
+            __compute_command_encoder_->dispatchThreadgroups(__all_threads_, __threads_());
+
+            __compute_command_encoder_->endEncoding();
+            __command_buffer_->commit();
         }
     }
 };
@@ -93,6 +91,20 @@ class [[nodiscard]] __Application_ : public NS::ApplicationDelegate
 public:
     inline ~__Application_() override
     {
+        const MTL::Drawable* __drawable_ = __view_->currentDrawable();
+        const MTL::Texture* __texture_ = __drawable_->texture();
+        MTL::CommandBuffer* __command_buffer_ = __command_queue_->commandBuffer();
+        __command_buffer_->presentDrawable(__drawable_);
+        __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
+        if(__drawable_ and __texture_ and __command_buffer_ and __compute_command_encoder_)
+        {
+            __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
+            __compute_command_encoder_->setTexture(__texture_, 0ul);
+            __compute_command_encoder_->dispatchThreadgroups(__all_threads_, __threads_());
+            
+            __compute_command_encoder_->endEncoding();
+            __command_buffer_->commit();
+        }
         __command_queue_->release();
         __compute_pipeline_state_->release();
         __library_->release();
