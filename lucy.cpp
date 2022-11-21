@@ -1,4 +1,4 @@
-#include <lucy.hpp>
+#include <Lucy.hpp>
 
 int main()
 {
