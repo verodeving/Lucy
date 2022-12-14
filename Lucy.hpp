@@ -4,78 +4,84 @@
 #include <Game.hpp>
 #include <Dependencies/macos/Internal.hpp>
 
-MTL::Device* __device_;
+inline MTL::Device* __device_;
 
-MTL::Library* __library_;
+inline MTL::Library* __library_;
 
-MTL::ComputePipelineState* __compute_pipeline_state_;
+inline MTL::ComputePipelineState* __compute_pipeline_state_;
 
-MTL::CommandQueue* __command_queue_;
+inline MTL::CommandQueue* __command_queue_;
 
-MTL::ComputeCommandEncoder* __compute_command_encoder_;
+inline MTL::ComputeCommandEncoder* __compute_command_encoder_;
 
-MTL::Size __all_threads_;
+inline MTL::Size __all_threads_;
     
 [[nodiscard]] inline consteval MTL::Size __threads_()
 {
-    return {16ul, 16ul, 1ul};
+    return {32ul, 16ul, 1ul};
 }
 
 class [[nodiscard]] __View_ : public MTK::ViewDelegate
 {
+    bool __ok_ = false;
 public:
     inline __View_(){}
 
     inline __View_(MTK::View* __view_)
     {
         if(__device_)
-            if((__library_ = __device_->newDefaultLibrary()))
-            {
-                NS::Error** __error_ = nullptr;
-                if((__compute_pipeline_state_ = __device_->newComputePipelineState(__library_->newFunction(NS::String::string("render", NS::StringEncoding::UTF8StringEncoding)), __error_)))
-                    if((__command_queue_ = __device_->newCommandQueue()))
-                    {
-                        MTL::CommandBuffer* __command_buffer_ = __command_queue_->commandBuffer();
-                        if(__command_buffer_)
+            if(__device_->supportsFamily(MTL::GPUFamilyMetal3))
+                if((__library_ = __device_->newDefaultLibrary()))
+                {
+                    NS::Error** __error_ = nullptr;
+                    if((__compute_pipeline_state_ = __device_->newComputePipelineState(__library_->newFunction(NS::String::string("render", NS::StringEncoding::UTF8StringEncoding)), __error_)))
+                        if((__command_queue_ = __device_->newCommandQueue()))
                         {
-                            const MTL::Drawable* __drawable_ = __view_->currentDrawable();
-                            if(__drawable_)
+                            MTL::CommandBuffer* __command_buffer_ = __command_queue_->commandBuffer();
+                            if(__command_buffer_)
                             {
-                                 __command_buffer_->presentDrawable(__drawable_);
-                                 __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
-                                 if(__compute_command_encoder_)
-                                 {
-                                    const MTL::Texture* __texture_ = __drawable_->texture();
-                                    if(__texture_)
-                                    {
-                                        __all_threads_ = MTL::Size::Make(__texture_->width(), __texture_->height(), 1ul);
-                                        __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
-                                        __compute_command_encoder_->setTexture(__texture_, 0ul);
-                                        __compute_command_encoder_->dispatchThreads(__all_threads_, __threads_());
-                                        Lucy::Game::Start();
-                                        __compute_command_encoder_->endEncoding();
-                                        __command_buffer_->commit();
-                                    }
-                                 }
+                                const MTL::Drawable* __drawable_ = __view_->currentDrawable();
+                                if(__drawable_)
+                                {
+                                     __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
+                                     if(__compute_command_encoder_)
+                                     {
+                                        const MTL::Texture* __texture_ = __drawable_->texture();
+                                        if(__texture_)
+                                        {
+                                            __all_threads_ = MTL::Size::Make(__texture_->width(), __texture_->height(), 1ul);
+                                            __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
+                                            __compute_command_encoder_->setTexture(__texture_, 0ul);
+                                            __compute_command_encoder_->dispatchThreads(__all_threads_, __threads_());
+                                            Lucy::Game::Start();
+                                            __compute_command_encoder_->endEncoding();
+                                            __command_buffer_->presentDrawable(__drawable_);
+                                            __command_buffer_->commit();
+                                            __ok_ = true;
+                                        }
+                                     }
+                                }
                             }
                         }
-                    }
-            }
+                }
+    }
+
+    [[nodiscard]] inline bool __get_ok_() const
+    {
+        return __ok_;
     }
 
     inline void drawInMTKView(MTK::View* __view_) override
     {
         MTL::CommandBuffer* __command_buffer_ = __command_queue_->commandBuffer();
-        {
-            const MTL::Drawable* __drawable_ = __view_->currentDrawable();
-            __command_buffer_->presentDrawable(__drawable_);
-            __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
-            __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
-            __compute_command_encoder_->setTexture(__drawable_->texture(), 0ul);
-            __compute_command_encoder_->dispatchThreadgroups(__all_threads_, __threads_());
-        }
+        const MTL::Drawable* __drawable_ = __view_->currentDrawable();
+        __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
+        __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
+        __compute_command_encoder_->setTexture(__drawable_->texture(), 0ul);
+        __compute_command_encoder_->dispatchThreadgroups(__all_threads_, __threads_());
         Lucy::Game::Update();
         __compute_command_encoder_->endEncoding();
+        __command_buffer_->presentDrawable(__drawable_);
         __command_buffer_->commit();
     }
 };
@@ -91,16 +97,14 @@ public:
     inline ~__Application_() override
     {
         MTL::CommandBuffer* __command_buffer_ = __command_queue_->commandBuffer();
-        {
-            const MTL::Drawable* __drawable_ = __view_->currentDrawable();
-            __command_buffer_->presentDrawable(__drawable_);
-            __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
-            __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
-            __compute_command_encoder_->setTexture(__drawable_->texture(), 0ul);
-            __compute_command_encoder_->dispatchThreadgroups(__all_threads_, __threads_());
-        }
+        const MTL::Drawable* __drawable_ = __view_->currentDrawable();
+        __compute_command_encoder_ = __command_buffer_->computeCommandEncoder();
+        __compute_command_encoder_->setComputePipelineState(__compute_pipeline_state_);
+        __compute_command_encoder_->setTexture(__drawable_->texture(), 0ul);
+        __compute_command_encoder_->dispatchThreadgroups(__all_threads_, __threads_());
         Lucy::Game::Finish();
         __compute_command_encoder_->endEncoding();
+        __command_buffer_->presentDrawable(__drawable_);
         __command_buffer_->commit();
         __command_queue_->release();
         __compute_pipeline_state_->release();
@@ -120,11 +124,12 @@ public:
         __device_ = MTL::CreateSystemDefaultDevice();
         __view_ = MTK::View::alloc()->init(frame, __device_);
         __window_->setContentView(__view_);
-        __view_->setFramebufferOnly(true);
+        __view_->setFramebufferOnly(false);
         __view_->setColorPixelFormat(MTL::PixelFormat::PixelFormatBGRA8Unorm);
         __view_->setPreferredFramesPerSecond(NS::Screen::mainScreen()->maximumFramesPerSecond());
         __m_view_ = __View_(__view_);
-        __view_->setDelegate(&__m_view_);
+        if(__m_view_.__get_ok_())
+            __view_->setDelegate(&__m_view_);
     }
 };
 

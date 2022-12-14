@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.25.0)
+cmake_minimum_required(VERSION 3.25.1)
 set(CMAKE_CXX_FLAGS "-I \"../..\" -I \"../../Dependencies/macos\" -std=c++20 -fomit-frame-pointer -fno-strict-aliasing -fno-rtti -fno-exceptions -Ofast -Wall -Wpedantic -Wextra -Werror -Wconversion -pedantic-errors -D lucy_major_version=0 -D lucy_middle_version=0 -D lucy_minor_version=1 -D lucy_mac=")
 set_source_files_properties("../../Lucy.metal" PROPERTIES LANGUAGE METAL COMPILE_FLAGS "-I \"../..\" -std=metal3.0 -Werror -D lucy_major_version=0 -D lucy_middle_version=0 -D lucy_minor_version=1 -D lucy_mac=")
 set(CMAKE_CONFIGURATION_TYPES Release CACHE STRING "" FORCE)

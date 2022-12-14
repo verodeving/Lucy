@@ -23,6 +23,37 @@ namespace Lucy
     using u64 = ulong;
 
     using s64 = long;
+
+    class f64
+    {
+        class ieee754
+        {
+        public:
+            bool sign : 1;
+        
+            u16 exponent : 11;
+
+            u64 mantissa : 52;
+        };
+
+        union
+        {
+            ieee754 bf64{};
+
+            u64 stub;
+        };
+    public:
+        inline constexpr f64(){}
+
+        inline constexpr f64(const f64& other) : stub(other.stub){}
+
+        inline constexpr f64(f64&& other) : stub(other.stub)
+        {
+            other.stub = 0ull;
+        }
+
+        
+    };
 }
 
 #endif
